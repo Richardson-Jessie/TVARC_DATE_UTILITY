@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_SHLP" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <DD30V>
+    <SHLPNAME>ZCA_D_VAR_NAME</SHLPNAME>
+    <DDLANGUAGE>E</DDLANGUAGE>
+    <DDTEXT>Variable Name</DDTEXT>
+    <ISSIMPLE>X</ISSIMPLE>
+    <SELMETHOD>TVARVC</SELMETHOD>
+    <SELMTYPE>T</SELMTYPE>
+    <SELMEXIT>Z_CA_F4_SHLP_EX_DATEVAR</SELMEXIT>
+    <DIALOGTYPE>D</DIALOGTYPE>
+    <FUZZY_SIMILARITY>0.8</FUZZY_SIMILARITY>
+   </DD30V>
+   <DD32P_TABLE>
+    <DD32P>
+     <SHLPNAME>ZCA_D_VAR_NAME</SHLPNAME>
+     <FIELDNAME>NAME</FIELDNAME>
+     <FLPOSITION>0001</FLPOSITION>
+     <ROLLNAME>RVARI_VNAM</ROLLNAME>
+     <SHLPINPUT>X</SHLPINPUT>
+     <SHLPOUTPUT>X</SHLPOUTPUT>
+     <SHLPSELPOS>01</SHLPSELPOS>
+     <SHLPLISPOS>01</SHLPLISPOS>
+     <SCRLEN3>20</SCRLEN3>
+    </DD32P>
+   </DD32P_TABLE>
+  </asx:values>
+ </asx:abap>
+</abapGit>

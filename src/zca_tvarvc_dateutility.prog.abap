@@ -1,0 +1,160 @@
+*&---------------------------------------------------------------------*
+*& Report zca_tvarvc_dateutility
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZCA_TVARVC_DATEUTILITY.
+
+TABLES: TVARVC.
+
+DATA: G_STOFFS  TYPE SCAL-DATE,
+      G_ENDOFFS TYPE SCAL-DATE,
+      G_OPTI    TYPE TVARVC-OPTI,
+      G_LOW     TYPE TVARVC-LOW,
+      G_HIGH    TYPE TVARVC-HIGH.
+
+DATA: G_STOPER(1) TYPE C,
+      G_ENOPER(1) TYPE C,
+      G_MSGTYP(1) TYPE C,
+      G_VRCNT     TYPE I.
+
+DATA: CM_HIGH(15) TYPE C.
+
+SELECTION-SCREEN BEGIN OF BLOCK B1 WITH FRAME TITLE TEXT-001.
+  PARAMETERS: P_NAME   LIKE TVARVC-NAME OBLIGATORY MATCHCODE OBJECT ZCA_D_VAR_NAME.
+  SELECTION-SCREEN COMMENT /1(79) COMM1.
+  SELECTION-SCREEN COMMENT /1(79) COMM2.
+  SELECTION-SCREEN COMMENT /1(79) CM_LOW.
+SELECTION-SCREEN END OF BLOCK B1.
+
+SELECTION-SCREEN BEGIN OF BLOCK B2 WITH FRAME TITLE TEXT-002.
+  PARAMETERS: P_WKSTOF TYPE I,
+              RDA_SPLS RADIOBUTTON GROUP RD2,
+              RDA_SMIN RADIOBUTTON GROUP RD2.
+  SELECTION-SCREEN BEGIN OF BLOCK B2_2 WITH FRAME TITLE TEXT-003.
+    SELECTION-SCREEN COMMENT /1(50) COMM3.
+    PARAMETERS: RDA_OLEQ RADIOBUTTON GROUP RD3,
+                RDA_OLLE RADIOBUTTON GROUP RD3,
+                RDA_OLGE RADIOBUTTON GROUP RD3.
+  SELECTION-SCREEN END OF BLOCK B2_2.
+SELECTION-SCREEN END OF BLOCK B2.
+
+SELECTION-SCREEN BEGIN OF BLOCK B3 WITH FRAME TITLE TEXT-004.
+  PARAMETERS: P_WKNDOF TYPE I,
+              RDA_EPLS RADIOBUTTON GROUP RD4,
+              RDA_EMIN RADIOBUTTON GROUP RD4.
+SELECTION-SCREEN END OF BLOCK B3.
+
+INITIALIZATION.
+  COMM1 = 'Only Use Variables with prefixed with ''ZCA_D'''.
+  COMM2 = 'Variables Need To Be Created In STVARV First'.
+  COMM3 = 'Options Only Valid for a Single Date'.
+
+AT SELECTION-SCREEN.
+
+  TRY.
+      CALL METHOD CL_SCAL_UTILS=>DATE_GET_WEEK
+        EXPORTING
+          IV_DATE      = SY-DATUM
+        IMPORTING
+          EV_YEAR_WEEK = DATA(G_YRWK)
+          EV_YEAR      = DATA(G_YEAR)
+          EV_WEEK      = DATA(G_WEEK).
+    CATCH CX_SCAL.
+  ENDTRY.
+
+  TRY.
+      CALL METHOD CL_SCAL_UTILS=>WEEK_GET_FIRST_DAY
+        EXPORTING
+          IV_YEAR_WEEK = G_YRWK
+          IV_YEAR      = G_YEAR
+          IV_WEEK      = G_WEEK
+        IMPORTING
+          EV_DATE      = DATA(G_FRSTDAY).
+      .
+    CATCH CX_SCAL.
+  ENDTRY.
+
+  IF RDA_SPLS = 'X'.
+    G_STOFFS = G_FRSTDAY + P_WKSTOF.
+    G_STOPER = '+'.
+  ELSE.
+    G_STOFFS = G_FRSTDAY - P_WKSTOF.
+    G_STOPER = '-'.
+  ENDIF.
+
+  IF RDA_EPLS = 'X'.
+    G_ENDOFFS = G_FRSTDAY + P_WKNDOF.
+    G_ENOPER = '+'.
+  ELSE.
+    G_ENDOFFS = G_FRSTDAY - P_WKNDOF.
+    G_ENOPER = '-'.
+  ENDIF.
+
+  G_LOW = G_STOFFS.
+
+  G_HIGH = G_ENDOFFS.
+
+  IF   RDA_OLEQ = 'X' AND P_WKNDOF IS INITIAL.
+    G_OPTI = 'EQ'.
+  ELSEIF     RDA_OLLE = 'X' AND P_WKNDOF IS INITIAL.
+    G_OPTI = 'LE'.
+  ELSEIF     RDA_OLGE = 'X' AND P_WKNDOF IS INITIAL.
+    G_OPTI = 'GE'.
+  ELSE.
+    G_OPTI = 'BT'.
+  ENDIF.
+
+  IF G_LOW  > G_HIGH AND P_WKNDOF IS NOT INITIAL. "Validation to make sure only valid ranges are entered into TVARVC
+    MESSAGE I650(DB).
+  ENDIF.
+
+  CLEAR CM_HIGH.
+
+  IF P_WKNDOF IS NOT INITIAL.
+    CONCATENATE
+    ' AND '
+    G_HIGH+6(2)
+    '.'
+     G_HIGH+4(2)
+    '.'
+     G_HIGH+0(4)
+     INTO CM_HIGH RESPECTING BLANKS.
+  ENDIF.
+
+  CONCATENATE G_OPTI
+  ' '
+   G_LOW+6(2)
+  '.'
+   G_LOW+4(2)
+  '.'
+   G_LOW+0(4)
+   CM_HIGH
+   INTO CM_LOW RESPECTING BLANKS.
+
+START-OF-SELECTION.
+
+  IF P_NAME(5) NE 'ZCA_D'. "Validation to Make sure other variables are not accidently changed.
+
+    MESSAGE 'Please Use Variable Prefixed with ''ZCA_D''' TYPE 'E'.
+
+  ELSE.
+
+    SELECT COUNT( * ) FROM TVARVC
+      WHERE  NAME = @P_NAME
+      AND TYPE = 'S'
+      AND NUMB = '0000' INTO @G_VRCNT.
+
+    IF G_VRCNT IS INITIAL.
+*
+      MESSAGE 'Variable Not Found, Please Create Variable in STVARV Transaction First' TYPE 'E'.
+    ENDIF.
+
+    IF P_WKNDOF IS INITIAL OR P_WKSTOF = P_WKNDOF.
+      UPDATE TVARVC SET SIGN = 'I' OPTI = G_OPTI LOW = G_LOW HIGH = ''  WHERE NAME = P_NAME AND TYPE = 'S' AND NUMB = ''.
+    ELSE.
+      UPDATE TVARVC SET SIGN = 'I' OPTI = G_OPTI LOW = G_LOW HIGH = G_HIGH WHERE NAME = P_NAME AND TYPE = 'S' AND NUMB = ''.
+      MESSAGE 'Selection Option Ignored For Range' TYPE 'S'.
+    ENDIF.
+*
+  ENDIF.
