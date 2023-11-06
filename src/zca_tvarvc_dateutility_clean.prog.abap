@@ -49,6 +49,9 @@ INITIALIZATION.
 
 AT SELECTION-SCREEN.
 
+  CLEAR:cmnt_lw,
+        cmnt_hgh.
+
   TRY.
       CALL METHOD cl_scal_utils=>date_get_week
         EXPORTING
@@ -98,7 +101,8 @@ AT SELECTION-SCREEN.
     MESSAGE i650(db).
   ENDIF.
 
-  CLEAR cmnt_hgh.
+  CLEAR:cmnt_lw,
+cmnt_hgh.
 
   IF p_wkndof IS NOT INITIAL.
     CONCATENATE
@@ -111,15 +115,17 @@ AT SELECTION-SCREEN.
      INTO cmnt_hgh RESPECTING BLANKS.
   ENDIF.
 
-  CONCATENATE selection_operator
-  ' '
-  start_date_offset+6(2)
-  '.'
-  start_date_offset+4(2)
-  '.'
-  start_date_offset+0(4)
-  cmnt_hgh
-  INTO cmnt_lw RESPECTING BLANKS.
+  IF p_wkstof IS NOT INITIAL.
+    CONCATENATE selection_operator
+    ' '
+    start_date_offset+6(2)
+    '.'
+    start_date_offset+4(2)
+    '.'
+    start_date_offset+0(4)
+    cmnt_hgh
+    INTO cmnt_lw RESPECTING BLANKS.
+  ENDIF.
 
 START-OF-SELECTION.
 
