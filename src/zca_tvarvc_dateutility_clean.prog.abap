@@ -20,7 +20,7 @@ DATA: cmnt_hgh(15) TYPE c.
 SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-001.
   PARAMETERS: p_name   LIKE tvarvc-name OBLIGATORY MATCHCODE OBJECT zca_d_var_name.
   SELECTION-SCREEN COMMENT /1(79) comm1.
-  SELECTION-SCREEN COMMENT /1(79) comm2.
+*  SELECTION-SCREEN COMMENT /1(79) comm2.
   SELECTION-SCREEN COMMENT /1(79) cmnt_lw.
 SELECTION-SCREEN END OF BLOCK b1.
 
@@ -44,7 +44,7 @@ SELECTION-SCREEN END OF BLOCK b3.
 
 INITIALIZATION.
   comm1 = 'Only Use Variables with prefixed with ''ZCA_D'''.
-  comm2 = 'Variables Need To Be Created In STVARV First'.
+*  comm2 = 'Variables will be created if it does not exis'.
   comm3 = 'Options Only Valid for a Single Date'.
 
 AT SELECTION-SCREEN.
@@ -141,9 +141,17 @@ START-OF-SELECTION.
       AND numb = '0000' INTO @tvarvc_variant_count.
 
     IF tvarvc_variant_count IS INITIAL.
-*
-      MESSAGE 'Variable Not Found, Please Create Variable in STVARV Transaction First' TYPE 'E'.
 
+      CALL METHOD zcl_va_tvarc_date_utility=>popup_confirm
+        RECEIVING
+          retval = DATA(popup_answer).
+
+      IF popup_answer = 'X'.
+
+        CALL METHOD zcl_va_tvarc_date_utility=>create_empty_select_opt_tvarvc
+          EXPORTING
+            variable = p_name.
+      ENDIF.
     ENDIF.
 
     IF p_wkndof IS INITIAL OR p_wkstof = p_wkndof.
