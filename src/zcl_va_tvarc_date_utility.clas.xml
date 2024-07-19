@@ -25,6 +25,24 @@
      <LANGU>E</LANGU>
      <DESCRIPT>ABAP: Name of Variant Variable</DESCRIPT>
     </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>ENQUE_VARIABLE</CMPNAME>
+     <SCONAME>LV_NAME</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>ABAP: Name of Variant Variable</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>ENQUE_VARIABLE</CMPNAME>
+     <SCONAME>LV_NUMB</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>ABAP: Current selection number</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>ENQUE_VARIABLE</CMPNAME>
+     <SCONAME>LV_TYPE</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>ABAP: Type of selection</DESCRIPT>
+    </SEOSUBCOTX>
    </DESCRIPTIONS_SUB>
   </asx:values>
  </asx:abap>

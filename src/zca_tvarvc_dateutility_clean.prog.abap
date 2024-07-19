@@ -105,28 +105,14 @@ AT SELECTION-SCREEN.
 cmnt_hgh.
 
   IF p_wkndof IS NOT INITIAL.
-    CONCATENATE
-    ' AND '
-    end_date_offset+6(2)
-    '.'
-     end_date_offset+4(2)
-    '.'
-     end_date_offset+0(4)
-     INTO cmnt_hgh RESPECTING BLANKS.
+    cmnt_hgh  = | AND { end_date_offset+6(2) }.{ end_date_offset+4(2) }.{ end_date_offset+0(4) }|.
   ENDIF.
 
   IF p_wkstof IS NOT INITIAL.
-    CONCATENATE selection_operator
-    ' '
-    start_date_offset+6(2)
-    '.'
-    start_date_offset+4(2)
-    '.'
-    start_date_offset+0(4)
-    cmnt_hgh
-    INTO cmnt_lw RESPECTING BLANKS.
+    cmnt_lw = | { start_date_offset+6(2) }.{ start_date_offset+4(2) }.{ start_date_offset+0(4) } { cmnt_hgh }|.
   ENDIF.
-
+*CL_ABAP_LOCK_OBJECT_FACTORY
+*https://help.sap.com/docs/abap-cloud/abap-rap/implementing-lock-operation
 START-OF-SELECTION.
 
   IF p_name(5) NE 'ZCA_D'. "Validation to Make sure other variables are not accidently changed.
@@ -156,6 +142,24 @@ START-OF-SELECTION.
 
     IF p_wkndof IS INITIAL OR p_wkstof = p_wkndof.
 
+      BREAK-POINT.
+
+      DATA(lr_lock_object) = cl_abap_lock_object_factory=>get_instance( iv_name = 'ESVARVC' ).
+*      DATA(lv_lock_argument) = sy-mandt && p_name && 'S' && '####'.
+*      DATA(lv_lock_argument) = sy-mandt && p_name && 'S'.
+      DATA(lv_lock_argument) = p_name && 'S'.
+
+      BREAK-POINT.
+
+      TRY.
+          lr_lock_object->enqueue(
+            it_parameter  = VALUE #( (  name = 'ESVARVC' value = REF #( lv_lock_argument ) ) )
+          ).
+
+        CATCH cx_abap_foreign_lock INTO DATA(foreign_lock).
+          MESSAGE foreign_lock TYPE 'E'.
+      ENDTRY.
+
       UPDATE tvarvc
       SET sign = 'I'
           opti = selection_operator
@@ -175,7 +179,15 @@ START-OF-SELECTION.
       WHERE name = p_name
       AND type = 'S'
       AND numb = ''.
+
+
+      TRY.
+          lr_lock_object->dequeue( ).
+
+        CATCH cx_abap_lock_failure INTO data(lr_exc).
+          RAISE SHORTDUMP lr_exc.
+      ENDTRY.
+
       MESSAGE 'Selection Option Ignored For Range' TYPE 'S'.
     ENDIF.
-
   ENDIF.
