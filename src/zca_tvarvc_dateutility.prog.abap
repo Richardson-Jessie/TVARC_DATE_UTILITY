@@ -147,7 +147,7 @@ START-OF-SELECTION.
       AND numb = '0000' INTO @DATA(tvarvc_variable_count).
 
     IF tvarvc_variable_count IS INITIAL.
-      zcl_va_tvarc_date_utility=>popup_confirm( RECEIVING retval = DATA(popup_answer) ).
+      zcl_ca_tvarvc_date_utility=>popup_confirm( RECEIVING retval = DATA(popup_answer) ).
       IF popup_answer = 'X'.
 
         INSERT tvarvc FROM @( VALUE #( name = p_name
