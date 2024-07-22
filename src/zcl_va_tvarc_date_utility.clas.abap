@@ -1,26 +1,16 @@
-CLASS zcl_va_tvarc_date_utility DEFINITION
-  PUBLIC
-  FINAL
-  CREATE PUBLIC .
+class ZCL_VA_TVARC_DATE_UTILITY definition
+  public
+  final
+  create public .
 
-  PUBLIC SECTION.
+public section.
 
-    CLASS-METHODS create_empty_select_opt_tvarvc
-      IMPORTING
-        !variable TYPE tvarvc-name .
-    CLASS-METHODS popup_confirm
-      RETURNING
-        VALUE(retval) TYPE boolean .
-    CLASS-METHODS enque_variable
-      IMPORTING
-        !lv_name TYPE tvarvc-name
-        !lv_type TYPE tvarvc-type
-        !lv_numb TYPE tvarvc-numb .
-    CLASS-METHODS deque_variable
-      IMPORTING
-        !lv_name TYPE tvarvc-name
-        !lv_type TYPE tvarvc-type
-        !lv_numb TYPE tvarvc-numb .
+  class-methods CREATE_EMPTY_SELECT_OPT_TVARVC
+    importing
+      !VARIABLE type TVARVC-NAME .
+  class-methods POPUP_CONFIRM
+    returning
+      value(RETVAL) type BOOLEAN .
   PROTECTED SECTION.
   PRIVATE SECTION.
 
@@ -29,7 +19,7 @@ ENDCLASS.
 
 
 
-CLASS zcl_va_tvarc_date_utility IMPLEMENTATION.
+CLASS ZCL_VA_TVARC_DATE_UTILITY IMPLEMENTATION.
 
 
   METHOD create_empty_select_opt_tvarvc.
@@ -86,32 +76,5 @@ CLASS zcl_va_tvarc_date_utility IMPLEMENTATION.
     ELSEIF answer = '1'.
       retval = 'X'.
     ENDIF.
-  ENDMETHOD.
-
-
-  METHOD enque_variable.
-    CALL FUNCTION 'ENQUEUE_ESVARVC'
-      EXPORTING
-        mode_tvarvc    = 'E'
-        name           = lv_name
-        type           = lv_type
-        numb           = lv_numb
-        _scope         = '2'
-      EXCEPTIONS
-        foreign_lock   = 1
-        system_failure = 2
-        OTHERS         = 3.
-  ENDMETHOD.
-
-
-  METHOD deque_variable.
-      CALL FUNCTION 'DEQUEUE_ESVARVC'
-    exporting
-       mode_tvarvc = 'E'
-       name        = lv_name
-       type        = lv_type
-       numb        = lv_numb
-       _scope      = '3'
-       _synchron   = ' '.
   ENDMETHOD.
 ENDCLASS.
