@@ -92,10 +92,12 @@ AT SELECTION-SCREEN.
                                                 ELSE '-'
                                                 ).
 
-  selection_operator = COND #( WHEN rda_oleq = 'X' AND p_wkndof IS INITIAL THEN 'EQ'
-                               WHEN rda_olle = 'X' AND p_wkndof IS INITIAL THEN 'LE'
-                               WHEN rda_olge = 'X' AND p_wkndof IS INITIAL THEN 'GE'
-                               ELSE 'BT').
+  selection_operator = COND #( WHEN p_wkndof IS INITIAL OR p_wkstof = p_wkndof
+                                THEN COND #( WHEN rda_oleq = 'X' THEN 'EQ'
+                                             WHEN rda_olle = 'X' THEN 'LE'
+                                             WHEN rda_olge = 'X' THEN 'GE'
+                                           )
+                                ELSE 'BT').
 
   IF start_date_offset  > end_date_offset AND p_wkndof IS NOT INITIAL. "Validation to make sure only valid ranges are entered into TVARVC
     MESSAGE i650(db).
@@ -109,7 +111,7 @@ cmnt_hgh.
   ENDIF.
 
   IF p_wkstof IS NOT INITIAL.
-    cmnt_lw = | { selection_operator } { start_date_offset+6(2) }.{ start_date_offset+4(2) }.{ start_date_offset+0(4) } { cmnt_hgh }|.
+    cmnt_lw = | { selection_operator } { start_date_offset+6(2) }.{ start_date_offset+4(2) }.{ start_date_offset+0(4) } { COND #( WHEN selection_operator = 'BT' THEN | {  cmnt_hgh } | ELSE || ) }|.
   ENDIF.
 
 START-OF-SELECTION.
@@ -119,18 +121,6 @@ START-OF-SELECTION.
     MESSAGE |Please Use Variable Prefixed with 'ZCA_D'| TYPE 'E'.
 
   ELSE.
-
-    SELECT COUNT( * ) FROM tvarvc
-      WHERE  name = @p_name
-      AND type = 'S'
-      AND numb = '0000' INTO @DATA(tvarvc_variable_count).
-
-    IF tvarvc_variable_count IS INITIAL.
-      zcl_va_tvarc_date_utility=>popup_confirm( RECEIVING retval = DATA(popup_answer) ).
-      IF popup_answer = 'X'.
-        zcl_va_tvarc_date_utility=>create_empty_select_opt_tvarvc( EXPORTING variable = p_name ).
-      ENDIF.
-    ENDIF.
 
     TRY.
         DATA(lr_lock_object) = cl_abap_lock_object_factory=>get_instance( iv_name = 'ESVARVC' ).
@@ -150,15 +140,44 @@ START-OF-SELECTION.
 
     ENDTRY.
 
-    UPDATE tvarvc SET sign = 'I',
-                      opti = @selection_operator,
-                      low = @start_date_offset,
-                      high = @( COND #( WHEN p_wkndof IS INITIAL OR p_wkstof = p_wkndof THEN ''
-                                        ELSE end_date_offset
-                                        ) )
-                       WHERE name = @p_name
-                                AND type = 'S'
-                                AND numb = ''.
+
+    SELECT COUNT( * ) FROM tvarvc
+      WHERE  name = @p_name
+      AND type = 'S'
+      AND numb = '0000' INTO @DATA(tvarvc_variable_count).
+
+    IF tvarvc_variable_count IS INITIAL.
+      zcl_va_tvarc_date_utility=>popup_confirm( RECEIVING retval = DATA(popup_answer) ).
+      IF popup_answer = 'X'.
+
+        INSERT tvarvc FROM @( VALUE #( name = p_name
+                                       type = 'S'
+                                       numb = ''
+                                       sign = 'I'
+                                       opti = selection_operator
+                                       low = start_date_offset
+                                       high =  COND #( WHEN p_wkndof IS INITIAL OR p_wkstof = p_wkndof THEN ''
+                                                        ELSE end_date_offset
+                                                      )
+
+                                      )
+                            ).
+      ENDIF.
+
+    ELSE.
+
+      UPDATE tvarvc SET sign = 'I',
+                        opti = @selection_operator,
+                        low = @start_date_offset,
+                        high = @( COND #( WHEN p_wkndof IS INITIAL OR p_wkstof = p_wkndof THEN ''
+                                          ELSE end_date_offset
+                                          ) )
+                         WHERE name = @p_name
+                                  AND type = 'S'
+                                  AND numb = ''.
+
+    ENDIF.
+
     TRY.
         lr_lock_object->dequeue( ).
 
@@ -173,9 +192,9 @@ START-OF-SELECTION.
 
     DATA(success_message) = COND #( WHEN tvarvc_variable_count IS INITIAL
                                     THEN | Unsuccessful, No Variable In Table |
-                                    ELSE | Variable { p_name }{ cmnt_lw } Created { COND #( WHEN p_wkndof IS INITIAL OR p_wkstof = p_wkndof
+                                    ELSE | Variable { p_name }{ cmnt_lw } Created{ COND #( WHEN p_wkndof IS INITIAL OR p_wkstof = p_wkndof
                                                                                             THEN ||
-                                                                                            ELSE |, Selection Option Ignored For Range|
+                                                                                            ELSE |, Selection Operator Ignored For Range|
                                                                                           )
                                                                                   } |
                                    ).
